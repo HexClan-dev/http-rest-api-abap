@@ -129,7 +129,6 @@ CLASS zcl_http_con IMPLEMENTATION.
     " Set the Host Name
     me->set_host_name( iv_hostname ).
 
-
   ENDMETHOD.
 
 
@@ -347,6 +346,8 @@ CLASS zcl_http_con IMPLEMENTATION.
   METHOD set_method_type.
     " set the method type
     me->mv_method_type = iv_method_type.
+    " Set the Method Type to Uppercase letters
+    TRANSLATE me->mv_method_type TO UPPER CASE.
   ENDMETHOD.
 
 
