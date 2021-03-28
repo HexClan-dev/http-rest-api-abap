@@ -167,7 +167,6 @@ CLASS zcl_http_con IMPLEMENTATION.
         ).
 
         IF sy-subrc <> 0.
-
           CASE sy-subrc.
             WHEN 1.
               MESSAGE e001(00) WITH 'Argument Not Found !' INTO zcx_rest_exception=>mv_msg_text.

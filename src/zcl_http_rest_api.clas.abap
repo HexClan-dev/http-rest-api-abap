@@ -4,6 +4,16 @@ CLASS zcl_http_rest_api DEFINITION
 
   PUBLIC SECTION.
 
+
+    CONSTANTS gc_status_create TYPE string VALUE '201'.
+    CONSTANTS gc_status_update TYPE string VALUE '200'.
+    CONSTANTS gc_status_list   TYPE string VALUE '200'.
+    CONSTANTS gc_status_delete TYPE string VALUE '204'.
+
+    CONSTANTS gc_token_jwt        TYPE char10 VALUE 'JWT'.
+    CONSTANTS gc_token_bearer     TYPE char10 VALUE 'Bearer'.
+    CONSTANTS gc_auth_basic       TYPE char10 VALUE 'Basic'.
+
     METHODS:
       constructor
         IMPORTING
@@ -15,8 +25,8 @@ CLASS zcl_http_rest_api DEFINITION
         IMPORTING
                   iv_username    TYPE char200 OPTIONAL
                   iv_password    TYPE char200 OPTIONAL
-                  iv_token       TYPE string OPTIONAL
-                    PREFERRED PARAMETER iv_token
+                  iv_token       TYPE string  OPTIONAL
+                  iv_token_type  TYPE char20  OPTIONAL
         RETURNING VALUE(ro_self) TYPE REF TO zcl_http_rest_api,
 
       add_header
@@ -66,6 +76,10 @@ CLASS zcl_http_rest_api DEFINITION
           mv_password TYPE char200.
 
 
+    METHODS convert2base64credentials
+      RETURNING VALUE(rv_base64_val) TYPE string.
+
+
 ENDCLASS.
 
 
@@ -75,22 +89,36 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD constructor.
     " Create the HTTP Communication Instance
-    me->mo_http_con = NEW zcl_http_con(  ).
+    me->mo_http_con = NEW zcl_http_con( ).
+  ENDMETHOD.
+
+
+  METHOD convert2base64credentials.
+
+
   ENDMETHOD.
 
 
   METHOD authenticate.
 
+    DATA: lv_header_value TYPE string.
+
     IF iv_token IS SUPPLIED.
       me->mv_token = iv_token.
+
+      lv_header_value = |{ iv_token_type } { iv_token }|.
     ELSEIF iv_username IS SUPPLIED AND iv_password IS SUPPLIED.
       me->mv_username = iv_username.
       me->mv_password = iv_password.
+
+      lv_header_value = |{ gc_auth_basic } { me->convert2base64credentials( ) }|.
     ELSE.
-      " TODO -> Raise Exception to provide credentials
+      RETURN.
     ENDIF.
 
-    ro_self = me.
+    " Provide Credentials on the Header
+    mo_http_con->set_header_fields( iv_name = 'Authorization' iv_value = lv_header_value ).
+
   ENDMETHOD.
 
 
