@@ -269,9 +269,9 @@ CLASS zcl_http_con IMPLEMENTATION.
 
       CATCH zcx_rest_exception INTO DATA(lo_x_catch).
         " if the response error
-*        IF lo_http_client IS BOUND.
-*          lo_http_client->get_last_error( IMPORTING code = ev_subrc message = ev_errortext ).
-*        ENDIF.
+        IF lo_http_client IS BOUND.
+          lo_http_client->get_last_error( IMPORTING code = ev_subrc message = ev_errortext ).
+        ENDIF.
 
         RAISE EXCEPTION lo_x_catch.
 
