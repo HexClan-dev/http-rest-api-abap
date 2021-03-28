@@ -42,6 +42,11 @@ CLASS zcl_http_con DEFINITION
       IMPORTING
         VALUE(iv_host_path) TYPE string .
 
+    METHODS set_url
+      IMPORTING
+                VALUE(iv_url) TYPE string
+      RAISING   zcx_rest_exception.
+
     METHODS append_body_form
       IMPORTING
         !iv_body_name  TYPE string
@@ -97,6 +102,7 @@ CLASS zcl_http_con DEFINITION
     DATA mv_context_type TYPE string .
     DATA mv_host_name TYPE string .
     DATA mv_host_path TYPE string .
+    DATA mv_url       TYPE string.
     DATA mt_multipart_data TYPE STANDARD TABLE OF ty_s_multipart .
 
     " Proxy data declaration
@@ -160,6 +166,16 @@ CLASS zcl_http_con IMPLEMENTATION.
 
         IF sy-subrc <> 0.
 
+          CASE sy-subrc.
+            WHEN 1.
+              MESSAGE e001(00) WITH 'Argument Not Found !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 2.
+              MESSAGE e001(00) WITH 'Plugin not Active !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 3.
+              MESSAGE e001(00) WITH 'Internal Error !' INTO zcx_rest_exception=>mv_msg_text.
+          ENDCASE.
+
+          zcx_rest_exception=>s_raise( ).
         ENDIF.
 
         " set the header table
@@ -206,8 +222,21 @@ CLASS zcl_http_con IMPLEMENTATION.
             OTHERS                     = 5
         ).
 
-        IF sy-subrc <> 0.
 
+        IF sy-subrc = 0.
+
+          CASE sy-subrc.
+            WHEN 1.
+              MESSAGE e001(00) WITH 'HTTP Communication Failure !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 2.
+              MESSAGE e001(00) WITH 'HTTP Invalid State !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 3.
+              MESSAGE e001(00) WITH 'HTTP Processing Failed !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 4.
+              MESSAGE e001(00) WITH 'HTTP Invalid Timeout!' INTO zcx_rest_exception=>mv_msg_text.
+          ENDCASE.
+
+          zcx_rest_exception=>s_raise( ).
         ENDIF.
 
         lo_http_client->receive(
@@ -218,8 +247,17 @@ CLASS zcl_http_con IMPLEMENTATION.
             OTHERS                     = 4
         ).
 
-        IF sy-subrc <> 0.
+        IF sy-subrc = 0.
+          CASE sy-subrc.
+            WHEN 1.
+              MESSAGE e001(00) WITH 'HTTP Communication Failure !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 2.
+              MESSAGE e001(00) WITH 'HTTP Invalid State !' INTO zcx_rest_exception=>mv_msg_text.
+            WHEN 3.
+              MESSAGE e001(00) WITH 'HTTP Processing Failed !' INTO zcx_rest_exception=>mv_msg_text.
+          ENDCASE.
 
+          zcx_rest_exception=>s_raise( ).
         ENDIF.
 
         " return the structure with the information
@@ -277,32 +315,33 @@ CLASS zcl_http_con IMPLEMENTATION.
     DATA: lo_m_part TYPE REF TO if_http_entity.
     DATA: ls_file TYPE ty_s_file.
 
-    FIELD-SYMBOLS: <ls_multipar_data> TYPE ty_s_multipart.
+    FIELD-SYMBOLS: <ls_multipart_data> TYPE ty_s_multipart.
 
-    LOOP AT me->mt_multipart_data ASSIGNING <ls_multipar_data>.
+    LOOP AT me->mt_multipart_data ASSIGNING <ls_multipart_data>.
       CLEAR: ls_file.
 
-      " Assign multipart data
+      " Create multipart
       lo_m_part = io_http_client->request->add_multipart( ).
+
       CHECK lo_m_part IS BOUND.
 
-      lo_m_part->set_content_type( content_type = <ls_multipar_data>-content_type ). " 'application/octet-stream'
-      IF <ls_multipar_data>-header_name IS NOT INITIAL AND <ls_multipar_data>-header_value IS NOT INITIAL.
-        lo_m_part->set_header_field( name = <ls_multipar_data>-header_name value = <ls_multipar_data>-header_value ).
+      lo_m_part->set_content_type( content_type = <ls_multipart_data>-content_type ). "
+      IF <ls_multipart_data>-header_name IS NOT INITIAL AND <ls_multipart_data>-header_value IS NOT INITIAL.
+        lo_m_part->set_header_field( name = <ls_multipart_data>-header_name value = <ls_multipart_data>-header_value ).
       ENDIF.
 
-      IF <ls_multipar_data>-form_name IS NOT INITIAL.
-        CASE <ls_multipar_data>-is_file.
-          WHEN abap_true. "'file' OR 'hocr' OR 'image'.
-            " proces the file data
-            ls_file = <ls_multipar_data>-file_data.
-
-            lo_m_part->set_header_field( name = if_http_header_fields=>content_disposition value = |form-data; name="{ <ls_multipar_data>-form_name }"; filename="{ ls_file-filename }"| ).
+      IF <ls_multipart_data>-form_name IS NOT INITIAL.
+        CASE <ls_multipart_data>-is_file.
+          WHEN abap_true. "file
+            " Assign the header and the data for the file
+            ls_file = <ls_multipart_data>-file_data.
+            lo_m_part->set_header_field( name = if_http_header_fields=>content_disposition value = |form-data; name="{ <ls_multipart_data>-form_name }"; filename="{ ls_file-filename }"| ).
             lo_m_part->set_data( data = ls_file-file ).
 
           WHEN OTHERS.
-            lo_m_part->set_header_field( name = if_http_header_fields=>content_disposition value = |form-data;name="{ <ls_multipar_data>-form_name }"| ).
-            lo_m_part->set_cdata( data = <ls_multipar_data>-form_value ).
+            " Assign header field
+            lo_m_part->set_header_field( name = if_http_header_fields=>content_disposition value = |form-data;name="{ <ls_multipart_data>-form_name }"| ).
+            lo_m_part->set_cdata( data = <ls_multipart_data>-form_value ).
         ENDCASE.
       ENDIF.
 
@@ -312,7 +351,7 @@ CLASS zcl_http_con IMPLEMENTATION.
 
 
   METHOD set_free.
-    " set free for the next usage
+    " Clear instance
     CLEAR:   mv_host_path,
              mv_context_type,
              mv_method_type,
@@ -322,7 +361,7 @@ CLASS zcl_http_con IMPLEMENTATION.
              mt_body_form,
              mt_body_form[],
              mt_multipart_data,
-             mt_multipart_data[]. " mv_host_name,
+             mt_multipart_data[].
   ENDMETHOD.
 
 
@@ -342,6 +381,16 @@ CLASS zcl_http_con IMPLEMENTATION.
     me->mv_host_name = iv_host_name.
   ENDMETHOD.
 
+
+  METHOD set_url.
+*   me->mv_url
+
+    IF me->mv_host_name IS NOT INITIAL OR me->mv_host_path IS NOT INITIAL.
+
+    ENDIF.
+
+    me->mv_url = iv_url.
+  ENDMETHOD.
 
   METHOD set_method_type.
     " set the method type
