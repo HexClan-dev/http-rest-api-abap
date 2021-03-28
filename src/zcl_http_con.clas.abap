@@ -21,11 +21,6 @@ CLASS zcl_http_con DEFINITION
            END OF ty_s_multipart.
 
 
-    CONSTANTS gc_status_create TYPE string VALUE '201' ##NO_TEXT.
-    CONSTANTS gc_status_update TYPE string VALUE '200' ##NO_TEXT.
-    CONSTANTS gc_status_list   TYPE string VALUE '200' ##NO_TEXT.
-    CONSTANTS gc_status_delete TYPE string VALUE '204' ##NO_TEXT.
-
     METHODS constructor
       IMPORTING
         !iv_hostname TYPE string OPTIONAL .
@@ -36,11 +31,15 @@ CLASS zcl_http_con DEFINITION
 
     METHODS set_host_name
       IMPORTING
-        VALUE(iv_host_name) TYPE string .
+        VALUE(iv_host_name) TYPE string
+      RAISING
+        zcx_rest_exception .
 
     METHODS set_path
       IMPORTING
-        VALUE(iv_host_path) TYPE string .
+        VALUE(iv_host_path) TYPE string
+      RAISING
+        zcx_rest_exception .
 
     METHODS set_url
       IMPORTING
@@ -82,8 +81,11 @@ CLASS zcl_http_con DEFINITION
       EXPORTING
         !eo_request        TYPE REF TO if_http_request
         !ev_errortext      TYPE string
+        !ev_subrc          TYPE sysubrc
       RETURNING
-        VALUE(ro_response) TYPE REF TO if_http_response .
+        VALUE(ro_response) TYPE REF TO if_http_response
+      RAISING
+        zcx_rest_exception.
 
     METHODS set_proxy
       IMPORTING
@@ -140,15 +142,15 @@ CLASS zcl_http_con IMPLEMENTATION.
 
   METHOD execute.
 
-    DATA: lv_full_url_path TYPE string.
-    " error data fields
-    DATA: lv_subrc     TYPE sysubrc,
-          lv_errortext TYPE string.
     DATA: lo_http_client TYPE REF TO if_http_client.
+    DATA: lv_full_url_path TYPE string.
 
     TRY.
-
-        CONCATENATE mv_host_name mv_host_path INTO lv_full_url_path.
+        IF me->mv_url IS INITIAL.
+          CONCATENATE mv_host_name mv_host_path INTO lv_full_url_path.
+        ELSE.
+          lv_full_url_path = me->mv_url.
+        ENDIF.
 
         cl_http_client=>create_by_url(
           EXPORTING
@@ -170,36 +172,34 @@ CLASS zcl_http_con IMPLEMENTATION.
             WHEN 1.
               MESSAGE e001(00) WITH 'Argument Not Found !' INTO zcx_rest_exception=>mv_msg_text.
             WHEN 2.
-              MESSAGE e001(00) WITH 'Plugin not Active !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'Plugin not Active !'  INTO zcx_rest_exception=>mv_msg_text.
             WHEN 3.
-              MESSAGE e001(00) WITH 'Internal Error !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'Internal Error !'     INTO zcx_rest_exception=>mv_msg_text.
           ENDCASE.
 
           zcx_rest_exception=>s_raise( ).
         ENDIF.
 
-        " set the header table
+        " set header fields
         lo_http_client->request->set_header_fields( fields = me->mt_header ).
-        " assign body variables
+
         " disable the pop-up for authentication
         lo_http_client->propertytype_logon_popup = lo_http_client->co_disabled.
-        " set the body part
+
+        " set method type
         lo_http_client->request->set_method( me->mv_method_type ).
 
         IF me->mv_context_type IS NOT INITIAL.
-
           lo_http_client->request->set_content_type( me->mv_context_type ).
         ENDIF.
 
-        " check if the multipart form data has been initialized
-        IF me->mt_multipart_data IS NOT INITIAL. " check if the multipart has been enabled
+        IF me->mt_multipart_data IS NOT INITIAL.
           " prepare file for sending
           me->assign_multipart_data( lo_http_client ).
         ENDIF.
 
-        " check if the bodyx has been initialized and then assign
         IF me->mv_body_x IS NOT INITIAL.
-          " assign the bode in as xstring
+          " assign the xbody
           lo_http_client->request->set_data( me->mv_body_x ).
         ENDIF.
 
@@ -229,11 +229,11 @@ CLASS zcl_http_con IMPLEMENTATION.
             WHEN 1.
               MESSAGE e001(00) WITH 'HTTP Communication Failure !' INTO zcx_rest_exception=>mv_msg_text.
             WHEN 2.
-              MESSAGE e001(00) WITH 'HTTP Invalid State !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'HTTP Invalid State !'         INTO zcx_rest_exception=>mv_msg_text.
             WHEN 3.
-              MESSAGE e001(00) WITH 'HTTP Processing Failed !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'HTTP Processing Failed !'     INTO zcx_rest_exception=>mv_msg_text.
             WHEN 4.
-              MESSAGE e001(00) WITH 'HTTP Invalid Timeout!' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'HTTP Invalid Timeout!'        INTO zcx_rest_exception=>mv_msg_text.
           ENDCASE.
 
           zcx_rest_exception=>s_raise( ).
@@ -252,9 +252,9 @@ CLASS zcl_http_con IMPLEMENTATION.
             WHEN 1.
               MESSAGE e001(00) WITH 'HTTP Communication Failure !' INTO zcx_rest_exception=>mv_msg_text.
             WHEN 2.
-              MESSAGE e001(00) WITH 'HTTP Invalid State !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'HTTP Invalid State !'         INTO zcx_rest_exception=>mv_msg_text.
             WHEN 3.
-              MESSAGE e001(00) WITH 'HTTP Processing Failed !' INTO zcx_rest_exception=>mv_msg_text.
+              MESSAGE e001(00) WITH 'HTTP Processing Failed !'     INTO zcx_rest_exception=>mv_msg_text.
           ENDCASE.
 
           zcx_rest_exception=>s_raise( ).
@@ -264,17 +264,16 @@ CLASS zcl_http_con IMPLEMENTATION.
         ro_response = lo_http_client->response.
         eo_request = lo_http_client->request.
 
+        " close http connection
+        lo_http_client->close( ).
 
-      CATCH cx_root INTO DATA(lo_x_catch).
+      CATCH zcx_rest_exception INTO DATA(lo_x_catch).
         " if the response error
-*          lo_http_client->get_last_error( IMPORTING code = lv_subrc message = ev_errortext ).
+*        IF lo_http_client IS BOUND.
+*          lo_http_client->get_last_error( IMPORTING code = ev_subrc message = ev_errortext ).
+*        ENDIF.
 
         RAISE EXCEPTION lo_x_catch.
-      CLEANUP.
-        IF lo_http_client IS BOUND.
-          " close the http connection
-          lo_http_client->close( ).
-        ENDIF.
 
     ENDTRY.
 
@@ -377,16 +376,20 @@ CLASS zcl_http_con IMPLEMENTATION.
 
 
   METHOD set_host_name.
+    IF me->mv_url IS NOT INITIAL.
+      MESSAGE e001(00) WITH 'URL is already assigned !' INTO zcx_rest_exception=>mv_msg_text.
+      zcx_rest_exception=>s_raise( ).
+    ENDIF.
+
     " Define the HostName
     me->mv_host_name = iv_host_name.
   ENDMETHOD.
 
 
   METHOD set_url.
-*   me->mv_url
-
     IF me->mv_host_name IS NOT INITIAL OR me->mv_host_path IS NOT INITIAL.
-
+      MESSAGE e001(00) WITH 'Hostname & Path are already assigned !' INTO zcx_rest_exception=>mv_msg_text.
+      zcx_rest_exception=>s_raise( ).
     ENDIF.
 
     me->mv_url = iv_url.
@@ -421,6 +424,11 @@ CLASS zcl_http_con IMPLEMENTATION.
 
 
   METHOD set_path.
+    IF me->mv_url IS NOT INITIAL.
+      MESSAGE e001(00) WITH 'URL is already assigned !' INTO zcx_rest_exception=>mv_msg_text.
+      zcx_rest_exception=>s_raise( ).
+    ENDIF.
+
     " Provide the host path
     me->mv_host_path = iv_host_path.
   ENDMETHOD.
