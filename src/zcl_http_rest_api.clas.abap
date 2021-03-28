@@ -95,6 +95,14 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD convert2base64credentials.
 
+    DATA(utility) = NEW cl_http_utility( ).
+
+    " Encode Username & Password for Authentication
+    CALL METHOD utility->encode_base64
+      EXPORTING
+        unencoded = |{ me->mv_username }:{ me->mv_password }|
+      RECEIVING
+        encoded   = rv_base64_val.
 
   ENDMETHOD.
 
