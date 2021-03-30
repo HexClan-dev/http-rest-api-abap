@@ -42,18 +42,33 @@ CLASS zcl_http_rest_api DEFINITION
         RETURNING VALUE(ro_self)  TYPE REF TO zcl_http_rest_api,
 
       get
-        RETURNING VALUE(ro_self) TYPE REF TO zcl_http_rest_api,
+        IMPORTING
+                  iv_body         TYPE string OPTIONAL
+                  iv_content_type TYPE string OPTIONAL
+        RETURNING VALUE(ro_self)  TYPE REF TO zcl_http_rest_api,
 
       put
-        RETURNING VALUE(ro_self) TYPE REF TO zcl_http_rest_api,
+        IMPORTING
+                  iv_body         TYPE string OPTIONAL
+                  iv_content_type TYPE string OPTIONAL
+        RETURNING VALUE(ro_self)  TYPE REF TO zcl_http_rest_api,
 
       delete
-        RETURNING VALUE(ro_self) TYPE REF TO zcl_http_rest_api,
+        IMPORTING
+                  iv_body         TYPE string OPTIONAL
+                  iv_content_type TYPE string OPTIONAL
+        RETURNING VALUE(ro_self)  TYPE REF TO zcl_http_rest_api,
 
       set_method_type
         IMPORTING
+                  iv_body         TYPE string OPTIONAL
+                  iv_content_type TYPE string OPTIONAL
                   !iv_method_type TYPE string
         RETURNING VALUE(ro_self)  TYPE REF TO zcl_http_rest_api,
+
+      set_file
+        IMPORTING
+          is_file TYPE zcl_http_con=>ty_s_file,
 
       execute
         IMPORTING
@@ -61,6 +76,8 @@ CLASS zcl_http_rest_api DEFINITION
         EXPORTING
           !eo_request   TYPE REF TO if_http_request
           !ev_errortext TYPE string
+        RAISING
+          zcx_rest_exception
         .
 
 
@@ -132,43 +149,60 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
 
   METHOD post.
-    " Set Method Type
-    me->mo_http_con->set_body(
-          EXPORTING
-            iv_body         = iv_body
-            iv_content_type = iv_content_type
-            iv_method_type  = 'POST'
-        ).
-
+    " Call Post Method
+    me->set_method_type(
+        iv_method_type  = 'POST'
+        iv_body         = iv_body
+        iv_content_type = iv_content_type
+    ).
 
     ro_self = me.
   ENDMETHOD.
 
   METHOD get.
-    " Set Method Type
-    me->mo_http_con->set_method_type( iv_method_type = 'GET' ).
+    " Call Get Method
+    me->set_method_type(
+        iv_method_type  = 'GET'
+        iv_body         = iv_body
+        iv_content_type = iv_content_type
+    ).
 
     ro_self = me.
   ENDMETHOD.
 
   METHOD put.
-    " Set Method Type
-    me->mo_http_con->set_method_type( iv_method_type = 'PUT' ).
+    " Call Put Method
+    me->set_method_type(
+        iv_method_type  = 'PUT'
+        iv_body         = iv_body
+        iv_content_type = iv_content_type
+    ).
 
     ro_self = me.
   ENDMETHOD.
 
   METHOD delete.
     " Set Method Type
-    me->mo_http_con->set_method_type( iv_method_type = 'DELETE' ).
+    me->set_method_type(
+        iv_method_type  = 'DELETE'
+        iv_body         = iv_body
+        iv_content_type = iv_content_type
+    ).
+
 
     ro_self = me.
   ENDMETHOD.
 
 
   METHOD set_method_type.
+
     " Set Method Type
-    me->mo_http_con->set_method_type( iv_method_type = iv_method_type ).
+    me->mo_http_con->set_body(
+      EXPORTING
+        iv_body         = iv_body
+        iv_content_type = iv_content_type
+        iv_method_type  = iv_method_type
+    ).
 
     ro_self = me.
   ENDMETHOD.
@@ -176,15 +210,23 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
   METHOD execute.
 
 
+    " TODO -> add a Structure Type for returning HTTP
     me->mo_http_con->execute(
-*      EXPORTING
-*        iv_timeout   = 60
+      EXPORTING
+        iv_timeout   = iv_timeout
 *      IMPORTING
 *        eo_request   =
 *        ev_errortext =
 *      RECEIVING
 *        ro_response  =
     ).
+
+  ENDMETHOD.
+
+  METHOD set_file.
+
+    " TODO -> implement sending File
+
   ENDMETHOD.
 
 ENDCLASS.
