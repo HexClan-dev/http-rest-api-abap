@@ -72,13 +72,18 @@ CLASS zcl_http_rest_api DEFINITION
 
       execute
         IMPORTING
-          !iv_timeout   TYPE i
-        EXPORTING
-          !eo_request   TYPE REF TO if_http_request
-          !ev_errortext TYPE string
+          !iv_timeout         TYPE i
+        RETURNING
+          VALUE(rs_http_data) TYPE zcl_http_con=>ty_s_response
         RAISING
-          zcx_rest_exception
-        .
+          zcx_rest_exception,
+
+      add_form_field
+        IMPORTING
+          VALUE(iv_content_type) TYPE string OPTIONAL
+          !iv_form_name          TYPE string
+          !iv_form_value         TYPE string OPTIONAL
+          !is_file               TYPE zcl_http_con=>ty_s_file OPTIONAL .
 
 
   PROTECTED SECTION.
@@ -209,23 +214,43 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD execute.
 
+    DATA: lo_http_req TYPE REF TO if_http_request.
 
     " TODO -> add a Structure Type for returning HTTP
-    me->mo_http_con->execute(
+    DATA(lo_http_response) = me->mo_http_con->execute(
       EXPORTING
         iv_timeout   = iv_timeout
-*      IMPORTING
-*        eo_request   =
-*        ev_errortext =
-*      RECEIVING
-*        ro_response  =
+      IMPORTING
+        eo_request   = lo_http_req
+        ev_errortext = rs_http_data-message
     ).
+
+    " return the Response with the information
+    rs_http_data-status = lo_http_response->get_header_field( name = '~status_code' ).
+    rs_http_data-response = lo_http_response->get_cdata(  ).
+    rs_http_data-request = lo_http_response->get_cdata( ).
+    rs_http_data-file_ = lo_http_response->get_data( ).
 
   ENDMETHOD.
 
   METHOD set_file.
+    "Sending File
+    me->mo_http_con->set_multipart_data(
+        iv_form_name = 'file'
+        is_file = is_file
+    ).
 
-    " TODO -> implement sending File
+  ENDMETHOD.
+
+  METHOD add_form_field.
+    " Add form value
+    me->mo_http_con->set_multipart_data(
+         iv_content_type = iv_content_type
+         iv_form_name =  iv_form_name
+         iv_form_value = iv_form_value
+         is_file = is_file
+
+     ).
 
   ENDMETHOD.
 

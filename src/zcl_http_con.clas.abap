@@ -20,6 +20,14 @@ CLASS zcl_http_con DEFINITION
              is_file      TYPE abap_bool,
            END OF ty_s_multipart.
 
+    TYPES: BEGIN OF ty_s_response,
+             response TYPE string,
+             request  TYPE string,
+             status   TYPE char3,
+             message  TYPE string,
+             file_    TYPE xstring,
+           END OF ty_s_response.
+
 
     METHODS constructor
       IMPORTING
