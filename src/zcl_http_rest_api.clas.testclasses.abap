@@ -4,7 +4,7 @@
 
 CLASS tst_cl_http_rest_api DEFINITION FOR TESTING
     DURATION SHORT
-        RISK LEVEL HARMLESS.
+    RISK LEVEL HARMLESS.
 
 
   PUBLIC SECTION.
@@ -40,6 +40,9 @@ CLASS tst_cl_http_rest_api IMPLEMENTATION.
           EXPORTING
             iv_username   = 'nspahija'
             iv_password   = 'test123123'
+        )->post(
+          EXPORTING
+            iv_body       =  '{}'
         ).
 
 

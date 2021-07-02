@@ -14,7 +14,9 @@ CLASS zcl_http_rest_api DEFINITION
 
     METHODS constructor
       IMPORTING
-        !iv_hostname TYPE string .
+        !iv_hostname TYPE string
+      RAISING
+        zcx_rest_exception.
 
     METHODS authentication
       IMPORTING
@@ -82,10 +84,25 @@ CLASS zcl_http_rest_api DEFINITION
 
     METHODS add_form_field
       IMPORTING
-        VALUE(iv_content_type) TYPE string OPTIONAL
-        !iv_form_name          TYPE string
-        !iv_form_value         TYPE string OPTIONAL
-        !is_file               TYPE zcl_http_con=>ty_s_file OPTIONAL .
+        iv_content_type TYPE string OPTIONAL
+        !iv_form_name   TYPE string
+        !iv_form_value  TYPE string OPTIONAL
+        !is_file        TYPE zcl_http_con=>ty_s_file OPTIONAL .
+
+    METHODS set_path
+      IMPORTING
+        iv_url       TYPE string OPTIONAL
+        iv_host_path TYPE string OPTIONAL
+        iv_host_name TYPE string OPTIONAL
+          PREFERRED PARAMETER iv_url
+      RAISING
+        zcx_rest_exception.
+
+    METHODS: set_json_body
+      IMPORTING
+                ir_any_data   TYPE any
+      RETURNING VALUE(ro_ref) TYPE REF TO zif_http_simpleform.
+
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -104,22 +121,14 @@ CLASS zcl_http_rest_api DEFINITION
     METHODS convert2base64credentials
       RETURNING VALUE(rv_base64_val) TYPE string.
 
-
-    METHODS set_path
-      IMPORTING
-        VALUE(iv_url)       TYPE string OPTIONAL
-        VALUE(iv_host_path) TYPE string OPTIONAL
-        VALUE(iv_host_name) TYPE string OPTIONAL
-          PREFERRED PARAMETER iv_url
-      RAISING
-        zcx_rest_exception.
+    METHODS clear.
 
 
 ENDCLASS.
 
 
 
-CLASS zcl_http_rest_api IMPLEMENTATION.
+CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
 
 
   METHOD add_form_field.
@@ -129,7 +138,6 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
          iv_form_name =  iv_form_name
          iv_form_value = iv_form_value
          is_file = is_file
-
      ).
 
   ENDMETHOD.
@@ -164,25 +172,23 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD constructor.
-    " Create the HTTP Communication Instance
-    me->mo_http_con = NEW zcl_http_con( iv_hostname ).
+  METHOD clear.
+    CLEAR:
+        me->mv_hostname,
+        me->mv_username,
+        me->mv_password,
+        me->mv_path,
+        me->mv_token,
+        me->mv_url.
+
+    " Clear the http object part
+    me->mo_http_con->set_free( ).
   ENDMETHOD.
 
 
-  METHOD set_path.
-
-    IF iv_url IS SUPPLIED.
-      me->mo_http_con->set_url( iv_url ).
-    ELSEIF iv_host_name IS SUPPLIED AND iv_host_path IS SUPPLIED.
-      " Insert HostName and the Path
-      me->mo_http_con->set_host_name( iv_host_name = iv_host_name ).
-      me->mo_http_con->set_path( iv_host_path = iv_host_path ).
-    ELSE.
-      MESSAGE e001(00) WITH 'Please define URL ' 'OR HostName and Path ' INTO zcx_rest_exception=>mv_msg_text.
-      zcx_rest_exception=>s_raise(  ).
-    ENDIF.
-
+  METHOD constructor.
+    " Create the HTTP Communication Instance
+    me->mo_http_con = NEW zcl_http_con( iv_hostname ).
   ENDMETHOD.
 
 
@@ -225,6 +231,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
     rs_http_data-request = lo_http_response->get_cdata( ).
     rs_http_data-file_ = lo_http_response->get_data( ).
 
+    me->mo_http_con->set_free( ).
   ENDMETHOD.
 
 
@@ -274,6 +281,12 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD set_json_body.
+
+
+  ENDMETHOD.
+
+
   METHOD set_method_type.
 
     " Set Method Type
@@ -285,5 +298,21 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
     ).
 
     ro_self = me.
+  ENDMETHOD.
+
+
+  METHOD set_path.
+
+    IF iv_url IS SUPPLIED.
+      me->mo_http_con->set_url( iv_url ).
+    ELSEIF iv_host_name IS SUPPLIED AND iv_host_path IS SUPPLIED.
+      " Insert HostName and the Path
+      me->mo_http_con->set_host_name( iv_host_name = iv_host_name ).
+      me->mo_http_con->set_path( iv_host_path = iv_host_path ).
+    ELSE.
+      MESSAGE e001(00) WITH 'Please define URL ' 'OR HostName and Path ' INTO zcx_rest_exception=>mv_msg_text.
+      zcx_rest_exception=>s_raise(  ).
+    ENDIF.
+
   ENDMETHOD.
 ENDCLASS.

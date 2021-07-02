@@ -31,7 +31,8 @@ CLASS zcl_http_con DEFINITION
 
     METHODS constructor
       IMPORTING
-        !iv_hostname TYPE string OPTIONAL .
+                !iv_hostname TYPE string OPTIONAL
+      RAISING   zcx_rest_exception.
 
     METHODS set_context_type
       IMPORTING
@@ -39,19 +40,19 @@ CLASS zcl_http_con DEFINITION
 
     METHODS set_host_name
       IMPORTING
-        VALUE(iv_host_name) TYPE string
+        iv_host_name TYPE string
       RAISING
         zcx_rest_exception .
 
     METHODS set_path
       IMPORTING
-        VALUE(iv_host_path) TYPE string
+        iv_host_path TYPE string
       RAISING
         zcx_rest_exception .
 
     METHODS set_url
       IMPORTING
-                VALUE(iv_url) TYPE string
+                iv_url TYPE string
       RAISING   zcx_rest_exception.
 
     METHODS append_body_form
@@ -61,22 +62,23 @@ CLASS zcl_http_con DEFINITION
 
     METHODS set_body
       IMPORTING
-        VALUE(iv_body)         TYPE string
-        VALUE(iv_content_type) TYPE string DEFAULT 'application/json'
-        VALUE(iv_method_type)  TYPE string DEFAULT 'GET'.
+        iv_body         TYPE string
+        iv_content_type TYPE string DEFAULT 'application/json'
+        iv_method_type  TYPE string DEFAULT 'GET'.
 
     METHODS set_multipart_data
       IMPORTING
-        VALUE(iv_content_type) TYPE string OPTIONAL
-        VALUE(iv_header_value) TYPE string OPTIONAL
-        VALUE(iv_header_name)  TYPE string OPTIONAL
-        !iv_form_name          TYPE string
-        !iv_form_value         TYPE string OPTIONAL
-        !is_file               TYPE ty_s_file OPTIONAL .
+        iv_content_type TYPE string OPTIONAL
+        iv_header_value TYPE string OPTIONAL
+        iv_header_name  TYPE string OPTIONAL
+        !iv_form_name   TYPE string
+        !iv_form_value  TYPE string OPTIONAL
+        !is_file        TYPE ty_s_file OPTIONAL .
 
     METHODS set_method_type
       IMPORTING
         !iv_method_type TYPE string .
+
 
     METHODS set_header_fields
       IMPORTING
@@ -100,7 +102,9 @@ CLASS zcl_http_con DEFINITION
         !iv_proxy_host    TYPE string
         !iv_proxy_service TYPE string .
 
+
     METHODS set_free .
+
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -348,6 +352,7 @@ CLASS zcl_http_con IMPLEMENTATION.
             " Assign header field
             lo_m_part->set_header_field( name = if_http_header_fields=>content_disposition value = |form-data;name="{ <ls_multipart_data>-form_name }"| ).
             lo_m_part->set_cdata( data = <ls_multipart_data>-form_value ).
+
         ENDCASE.
       ENDIF.
 
