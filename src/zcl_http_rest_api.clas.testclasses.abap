@@ -31,9 +31,9 @@ CLASS tst_cl_http_rest_api IMPLEMENTATION.
   METHOD test_authentication.
 
     TRY.
-        DATA: lo_rest_api TYPE REF TO zcl_http_rest_api.
+        DATA: lo_rest_api TYPE REF TO zcl_http_simple_rest_api.
 
-        lo_rest_api = NEW zcl_http_simple_rest_api( iv_hostname = 'https://www.test.login.com' ).
+        lo_rest_api = NEW #( iv_hostname = 'https://www.test.login.com' ).
 
         lo_rest_api->authentication(
           EXPORTING

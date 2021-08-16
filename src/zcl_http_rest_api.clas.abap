@@ -20,28 +20,22 @@ CLASS zcl_http_rest_api DEFINITION
 
     METHODS authentication
       IMPORTING
-        !iv_username   TYPE char200 OPTIONAL
-        !iv_password   TYPE char200 OPTIONAL
-        !iv_token      TYPE string OPTIONAL
-        !iv_token_type TYPE char20 OPTIONAL
-      RETURNING
-        VALUE(ro_self) TYPE REF TO zcl_http_rest_api .
+                !iv_username   TYPE char200 OPTIONAL
+                !iv_password   TYPE char200 OPTIONAL
+                !iv_token      TYPE string OPTIONAL
+                !iv_token_type TYPE char20 OPTIONAL.
 
     METHODS add_header
       IMPORTING
-        !iv_name       TYPE string
-        !iv_value      TYPE string
-      RETURNING
-        VALUE(ro_self) TYPE REF TO zcl_http_rest_api .
+        !iv_name  TYPE string
+        !iv_value TYPE string.
 
 
     METHODS set_method_type
       IMPORTING
         !iv_body         TYPE string OPTIONAL
         !iv_content_type TYPE string OPTIONAL
-        !iv_method_type  TYPE string
-      RETURNING
-        VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
+        !iv_method_type  TYPE string.
 
     METHODS execute
       IMPORTING
@@ -90,7 +84,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD add_header.
     me->mo_http_con->set_header_fields( iv_name = iv_name iv_value = iv_value ).
-    ro_self = me.
+*    ro_self = me.
   ENDMETHOD.
 
 
@@ -114,7 +108,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
     " Provide Credentials on the Header
     mo_http_con->set_header_fields( iv_name = 'Authorization' iv_value = lv_header_value ).
 
-    ro_self = me.
+*    ro_self ?= me.
   ENDMETHOD.
 
   METHOD constructor.
@@ -164,7 +158,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
         iv_method_type  = iv_method_type
     ).
 
-    ro_self = me.
+*    ro_self = me.
   ENDMETHOD.
 
 

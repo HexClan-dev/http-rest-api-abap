@@ -40,8 +40,6 @@ CLASS zcl_http_simple_rest_api DEFINITION
 
     METHODS add_header REDEFINITION.
 
-    METHODS execute REDEFINITION.
-
     METHODS: set_json_body
       IMPORTING
                 ir_any_data   TYPE any
@@ -68,7 +66,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_username = iv_username
     ).
 
-    ro_self = me.
   ENDMETHOD.
 
 
@@ -79,13 +76,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_name  = iv_name
         iv_value = iv_value
     ).
-
-    ro_self = me.
-  ENDMETHOD.
-
-
-  METHOD execute.
-
 
   ENDMETHOD.
 
@@ -98,7 +88,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_method_type  = iv_method_type
     ).
 
-    ro_self = me.
   ENDMETHOD.
 
 
@@ -110,7 +99,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_content_type = iv_content_type
     ).
 
-    ro_self = me.
   ENDMETHOD.
 
 
@@ -122,7 +110,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_content_type = iv_content_type
     ).
 
-    ro_self = me.
   ENDMETHOD.
 
 
@@ -134,7 +121,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
         iv_content_type = iv_content_type
     ).
 
-    ro_self = me.
   ENDMETHOD.
 
   METHOD delete.
@@ -146,7 +132,6 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
     ).
 
 
-    ro_self = me.
   ENDMETHOD.
 
 
