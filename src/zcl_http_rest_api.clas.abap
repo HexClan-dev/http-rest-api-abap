@@ -34,33 +34,6 @@ CLASS zcl_http_rest_api DEFINITION
       RETURNING
         VALUE(ro_self) TYPE REF TO zcl_http_rest_api .
 
-    METHODS post
-      IMPORTING
-        !iv_body         TYPE string OPTIONAL
-        !iv_content_type TYPE string OPTIONAL
-      RETURNING
-        VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
-
-    METHODS get
-      IMPORTING
-        !iv_body         TYPE string OPTIONAL
-        !iv_content_type TYPE string OPTIONAL
-      RETURNING
-        VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
-
-    METHODS put
-      IMPORTING
-        !iv_body         TYPE string OPTIONAL
-        !iv_content_type TYPE string OPTIONAL
-      RETURNING
-        VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
-
-    METHODS delete
-      IMPORTING
-        !iv_body         TYPE string OPTIONAL
-        !iv_content_type TYPE string OPTIONAL
-      RETURNING
-        VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
 
     METHODS set_method_type
       IMPORTING
@@ -70,10 +43,6 @@ CLASS zcl_http_rest_api DEFINITION
       RETURNING
         VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
 
-    METHODS set_file
-      IMPORTING
-        !is_file TYPE zcl_http_con=>ty_s_file .
-
     METHODS execute
       IMPORTING
         !iv_timeout         TYPE i
@@ -82,12 +51,6 @@ CLASS zcl_http_rest_api DEFINITION
       RAISING
         zcx_rest_exception .
 
-    METHODS add_form_field
-      IMPORTING
-        iv_content_type TYPE string OPTIONAL
-        !iv_form_name   TYPE string
-        !iv_form_value  TYPE string OPTIONAL
-        !is_file        TYPE zcl_http_con=>ty_s_file OPTIONAL .
 
     METHODS set_path
       IMPORTING
@@ -98,15 +61,8 @@ CLASS zcl_http_rest_api DEFINITION
       RAISING
         zcx_rest_exception.
 
-    METHODS: set_json_body
-      IMPORTING
-                ir_any_data   TYPE any
-      RETURNING VALUE(ro_ref) TYPE REF TO zif_http_simpleform.
-
 
   PROTECTED SECTION.
-  PRIVATE SECTION.
-
     DATA: mo_http_con TYPE REF TO zcl_http_con.
     DATA: mv_token TYPE string.
 
@@ -124,24 +80,13 @@ CLASS zcl_http_rest_api DEFINITION
     METHODS clear.
 
 
+  PRIVATE SECTION.
+
 ENDCLASS.
 
 
 
-CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
-
-
-  METHOD add_form_field.
-    " Add form value
-    me->mo_http_con->set_multipart_data(
-         iv_content_type = iv_content_type
-         iv_form_name =  iv_form_name
-         iv_form_value = iv_form_value
-         is_file = is_file
-     ).
-
-  ENDMETHOD.
-
+CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD add_header.
     me->mo_http_con->set_header_fields( iv_name = iv_name iv_value = iv_value ).
@@ -169,22 +114,8 @@ CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
     " Provide Credentials on the Header
     mo_http_con->set_header_fields( iv_name = 'Authorization' iv_value = lv_header_value ).
 
+    ro_self = me.
   ENDMETHOD.
-
-
-  METHOD clear.
-    CLEAR:
-        me->mv_hostname,
-        me->mv_username,
-        me->mv_password,
-        me->mv_path,
-        me->mv_token,
-        me->mv_url.
-
-    " Clear the http object part
-    me->mo_http_con->set_free( ).
-  ENDMETHOD.
-
 
   METHOD constructor.
     " Create the HTTP Communication Instance
@@ -196,19 +127,6 @@ CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
     " Encode Username & Password for Authentication
     rv_base64_val = cl_http_utility=>encode_base64( unencoded = |{ me->mv_username }:{ me->mv_password }| ).
 
-  ENDMETHOD.
-
-
-  METHOD delete.
-    " Set Method Type
-    me->set_method_type(
-        iv_method_type  = 'DELETE'
-        iv_body         = iv_body
-        iv_content_type = iv_content_type
-    ).
-
-
-    ro_self = me.
   ENDMETHOD.
 
 
@@ -232,57 +150,6 @@ CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
     rs_http_data-file_ = lo_http_response->get_data( ).
 
     me->mo_http_con->set_free( ).
-  ENDMETHOD.
-
-
-  METHOD get.
-    " Call Get Method
-    me->set_method_type(
-        iv_method_type  = 'GET'
-        iv_body         = iv_body
-        iv_content_type = iv_content_type
-    ).
-
-    ro_self = me.
-  ENDMETHOD.
-
-
-  METHOD post.
-    " Call Post Method
-    me->set_method_type(
-        iv_method_type  = 'POST'
-        iv_body         = iv_body
-        iv_content_type = iv_content_type
-    ).
-
-    ro_self = me.
-  ENDMETHOD.
-
-
-  METHOD put.
-    " Call Put Method
-    me->set_method_type(
-        iv_method_type  = 'PUT'
-        iv_body         = iv_body
-        iv_content_type = iv_content_type
-    ).
-
-    ro_self = me.
-  ENDMETHOD.
-
-
-  METHOD set_file.
-    "Sending File
-    me->mo_http_con->set_multipart_data(
-        iv_form_name = 'file'
-        is_file = is_file
-    ).
-
-  ENDMETHOD.
-
-
-  METHOD set_json_body.
-
 
   ENDMETHOD.
 
@@ -315,4 +182,19 @@ CLASS ZCL_HTTP_REST_API IMPLEMENTATION.
     ENDIF.
 
   ENDMETHOD.
+
+  METHOD clear.
+    CLEAR:
+        me->mv_hostname,
+        me->mv_username,
+        me->mv_password,
+        me->mv_path,
+        me->mv_token,
+        me->mv_url.
+
+    " Clear the http object part
+    me->mo_http_con->set_free( ).
+  ENDMETHOD.
+
+
 ENDCLASS.
