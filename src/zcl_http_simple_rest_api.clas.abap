@@ -34,7 +34,7 @@ CLASS zcl_http_simple_rest_api DEFINITION
       RETURNING
         VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
 
-    METHODS set_method_type REDEFINITION.
+    METHODS set_body REDEFINITION.
 
     METHODS authentication REDEFINITION.
 
@@ -79,7 +79,7 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD set_method_type.
+  METHOD set_body.
     " Set Method Type
     me->mo_http_con->set_body(
       EXPORTING
@@ -93,7 +93,7 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
   METHOD get.
     " Call Get Method
-    me->set_method_type(
+    me->set_body(
         iv_method_type  = 'GET'
         iv_body         = iv_body
         iv_content_type = iv_content_type
@@ -104,7 +104,7 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
   METHOD post.
     " Call Post Method
-    me->set_method_type(
+    me->set_body(
         iv_method_type  = 'POST'
         iv_body         = iv_body
         iv_content_type = iv_content_type
@@ -115,7 +115,7 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
   METHOD put.
     " Call Put Method
-    me->set_method_type(
+    me->set_body(
         iv_method_type  = 'PUT'
         iv_body         = iv_body
         iv_content_type = iv_content_type
@@ -125,7 +125,7 @@ CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
   METHOD delete.
     " Set Method Type
-    me->set_method_type(
+    me->set_body(
         iv_method_type  = 'DELETE'
         iv_body         = iv_body
         iv_content_type = iv_content_type

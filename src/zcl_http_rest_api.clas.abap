@@ -31,7 +31,7 @@ CLASS zcl_http_rest_api DEFINITION
         !iv_value TYPE string.
 
 
-    METHODS set_method_type
+    METHODS set_body
       IMPORTING
         !iv_body         TYPE string OPTIONAL
         !iv_content_type TYPE string OPTIONAL
@@ -148,7 +148,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD set_method_type.
+  METHOD set_body.
 
     " Set Method Type
     me->mo_http_con->set_body(
