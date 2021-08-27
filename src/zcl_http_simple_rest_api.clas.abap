@@ -34,10 +34,6 @@ CLASS zcl_http_simple_rest_api DEFINITION
       RETURNING
         VALUE(ro_self)   TYPE REF TO zcl_http_rest_api .
 
-    METHODS set_body REDEFINITION.
-
-    METHODS authentication REDEFINITION.
-
     METHODS add_header REDEFINITION.
 
     METHODS: set_json_body
@@ -56,36 +52,12 @@ ENDCLASS.
 CLASS zcl_http_simple_rest_api IMPLEMENTATION.
 
 
-
-  METHOD authentication.
-
-    super->authentication(
-        iv_password = iv_password
-        iv_token = iv_token
-        iv_token_type = iv_token_type
-        iv_username = iv_username
-    ).
-
-  ENDMETHOD.
-
-
   METHOD add_header.
     " Add a header value
     super->add_header(
       EXPORTING
         iv_name  = iv_name
         iv_value = iv_value
-    ).
-
-  ENDMETHOD.
-
-  METHOD set_body.
-    " Set Method Type
-    me->mo_http_con->set_body(
-      EXPORTING
-        iv_body         = iv_body
-        iv_content_type = iv_content_type
-        iv_method_type  = iv_method_type
     ).
 
   ENDMETHOD.
