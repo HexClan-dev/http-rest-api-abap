@@ -4,13 +4,22 @@ CLASS zcl_http_rest_api DEFINITION
 
   PUBLIC SECTION.
 
+    TYPES: ty_token_type TYPE char10.
+
+
+    CONSTANTS: BEGIN OF token_type,
+                 token_jwt    TYPE ty_token_type VALUE 'JWT',
+                 token_bearer TYPE ty_token_type VALUE 'Bearer',
+               END OF token_type.
+
+    CONSTANTS: gc_auth_basic   TYPE char10 VALUE 'Basic' ##NO_TEXT.
+
     CONSTANTS gc_status_create TYPE string VALUE '201' ##NO_TEXT.
     CONSTANTS gc_status_update TYPE string VALUE '200' ##NO_TEXT.
     CONSTANTS gc_status_list TYPE string VALUE '200' ##NO_TEXT.
     CONSTANTS gc_status_delete TYPE string VALUE '204' ##NO_TEXT.
-    CONSTANTS gc_token_jwt TYPE char10 VALUE 'JWT' ##NO_TEXT.
-    CONSTANTS gc_token_bearer TYPE char10 VALUE 'Bearer' ##NO_TEXT.
-    CONSTANTS gc_auth_basic TYPE char10 VALUE 'Basic' ##NO_TEXT.
+
+
 
     METHODS constructor
       IMPORTING
@@ -20,10 +29,10 @@ CLASS zcl_http_rest_api DEFINITION
 
     METHODS authentication
       IMPORTING
-                !iv_username   TYPE char200 OPTIONAL
-                !iv_password   TYPE char200 OPTIONAL
-                !iv_token      TYPE string OPTIONAL
-                !iv_token_type TYPE char20 OPTIONAL.
+        !iv_username   TYPE char200 OPTIONAL
+        !iv_password   TYPE char200 OPTIONAL
+        !iv_token      TYPE string OPTIONAL
+        !iv_token_type TYPE ty_token_type OPTIONAL.
 
     METHODS add_header
       IMPORTING
@@ -39,7 +48,7 @@ CLASS zcl_http_rest_api DEFINITION
 
     METHODS execute
       IMPORTING
-        !iv_timeout         TYPE i
+        !iv_timeout         TYPE i DEFAULT 1000
       RETURNING
         VALUE(rs_http_data) TYPE zcl_http_con=>ty_s_response
       RAISING
@@ -83,8 +92,9 @@ ENDCLASS.
 CLASS zcl_http_rest_api IMPLEMENTATION.
 
   METHOD add_header.
+
     me->mo_http_con->set_header_fields( iv_name = iv_name iv_value = iv_value ).
-*    ro_self = me.
+
   ENDMETHOD.
 
 
@@ -92,7 +102,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
     DATA: lv_header_value TYPE string.
 
-    IF iv_token IS SUPPLIED.
+    IF iv_token IS SUPPLIED AND iv_token_type IS SUPPLIED.
       me->mv_token = iv_token.
 
       lv_header_value = |{ iv_token_type } { iv_token }|.

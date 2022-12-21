@@ -197,6 +197,12 @@ CLASS zcl_http_con IMPLEMENTATION.
         " disable the pop-up for authentication
         lo_http_client->propertytype_logon_popup = lo_http_client->co_disabled.
 
+
+        IF me->mv_method_type IS INITIAL.
+          MESSAGE e001(00) WITH 'Method Type is initial' INTO zcx_rest_exception=>mv_msg_text.
+          zcx_rest_exception=>s_raise( ).
+        ENDIF.
+
         " set method type
         lo_http_client->request->set_method( me->mv_method_type ).
 
@@ -234,7 +240,7 @@ CLASS zcl_http_con IMPLEMENTATION.
         ).
 
 
-        IF sy-subrc = 0.
+        IF sy-subrc <> 0.
 
           CASE sy-subrc.
             WHEN 1.
@@ -258,7 +264,7 @@ CLASS zcl_http_con IMPLEMENTATION.
             OTHERS                     = 4
         ).
 
-        IF sy-subrc = 0.
+        IF sy-subrc <> 0.
           CASE sy-subrc.
             WHEN 1.
               MESSAGE e001(00) WITH 'HTTP Communication Failure !' INTO zcx_rest_exception=>mv_msg_text.
@@ -276,7 +282,7 @@ CLASS zcl_http_con IMPLEMENTATION.
         eo_request = lo_http_client->request.
 
         " close http connection
-        lo_http_client->close( ).
+*        lo_http_client->close( ).
 
       CATCH zcx_rest_exception INTO DATA(lo_x_catch).
         " if the response error
