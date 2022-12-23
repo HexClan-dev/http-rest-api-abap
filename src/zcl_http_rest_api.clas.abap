@@ -1,6 +1,8 @@
 CLASS zcl_http_rest_api DEFINITION
   PUBLIC
-  CREATE PUBLIC .
+  CREATE PRIVATE
+  GLOBAL FRIENDS zcl_http_simple_rest_api
+                 zcl_http_multiform_rest_api.
 
   PUBLIC SECTION.
 
@@ -27,24 +29,30 @@ CLASS zcl_http_rest_api DEFINITION
       RAISING
         zcx_rest_exception.
 
-    METHODS authentication
+    METHODS basic_authentication
       IMPORTING
-        !iv_username   TYPE char200 OPTIONAL
-        !iv_password   TYPE char200 OPTIONAL
-        !iv_token      TYPE string OPTIONAL
-        !iv_token_type TYPE ty_token_type OPTIONAL.
+        !iv_username TYPE char200
+        !iv_password TYPE char200.
+
+    METHODS token_authentication
+      IMPORTING
+        !iv_token      TYPE string
+        !iv_token_type TYPE ty_token_type.
 
     METHODS add_header
       IMPORTING
         !iv_name  TYPE string
         !iv_value TYPE string.
 
+    METHODS set_method_type
+      IMPORTING
+        !iv_method_type TYPE zif_http_method_type=>ty_method_type.
 
     METHODS set_body
       IMPORTING
         !iv_body         TYPE string OPTIONAL
         !iv_content_type TYPE string OPTIONAL
-        !iv_method_type  TYPE string.
+        !iv_method_type  TYPE zif_http_method_type=>ty_method_type.
 
     METHODS execute
       IMPORTING
@@ -98,22 +106,28 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD authentication.
+  METHOD basic_authentication.
 
     DATA: lv_header_value TYPE string.
 
-    IF iv_token IS SUPPLIED AND iv_token_type IS SUPPLIED.
-      me->mv_token = iv_token.
+    me->mv_username = iv_username.
+    me->mv_password = iv_password.
 
-      lv_header_value = |{ iv_token_type } { iv_token }|.
-    ELSEIF iv_username IS SUPPLIED AND iv_password IS SUPPLIED.
-      me->mv_username = iv_username.
-      me->mv_password = iv_password.
+    lv_header_value = |{ gc_auth_basic } { me->convert2base64credentials( ) }|.
 
-      lv_header_value = |{ gc_auth_basic } { me->convert2base64credentials( ) }|.
-    ELSE.
-      RETURN.
-    ENDIF.
+    " Provide Credentials on the Header
+    mo_http_con->set_header_fields( iv_name = 'Authorization' iv_value = lv_header_value ).
+
+*    ro_self ?= me.
+  ENDMETHOD.
+
+  METHOD token_authentication.
+
+    DATA: lv_header_value TYPE string.
+
+    me->mv_token = iv_token.
+
+    lv_header_value = |{ iv_token_type } { iv_token }|.
 
     " Provide Credentials on the Header
     mo_http_con->set_header_fields( iv_name = 'Authorization' iv_value = lv_header_value ).
@@ -133,6 +147,12 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
 
   ENDMETHOD.
 
+
+  METHOD set_method_type.
+
+    mo_http_con->set_method_type( iv_method_type = iv_method_type ).
+
+  ENDMETHOD.
 
   METHOD execute.
 

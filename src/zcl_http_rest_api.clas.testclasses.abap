@@ -35,7 +35,7 @@ CLASS tst_cl_http_rest_api IMPLEMENTATION.
 
         lo_rest_api = NEW #( iv_hostname = 'https://www.test.login.com' ).
 
-        lo_rest_api->authentication(
+        lo_rest_api->basic_authentication(
           EXPORTING
             iv_username   = 'nspahija'
             iv_password   = 'test123123'

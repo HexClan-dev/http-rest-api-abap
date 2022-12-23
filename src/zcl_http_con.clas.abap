@@ -64,7 +64,7 @@ CLASS zcl_http_con DEFINITION
       IMPORTING
         iv_body         TYPE string
         iv_content_type TYPE string DEFAULT 'application/json'
-        iv_method_type  TYPE string DEFAULT 'GET'.
+        iv_method_type  TYPE zif_http_method_type=>ty_method_type DEFAULT zif_http_method_type=>gc_get_method.
 
     METHODS set_multipart_data
       IMPORTING
@@ -77,13 +77,18 @@ CLASS zcl_http_con DEFINITION
 
     METHODS set_method_type
       IMPORTING
-        !iv_method_type TYPE string .
+        !iv_method_type TYPE zif_http_method_type=>ty_method_type .
 
 
     METHODS set_header_fields
       IMPORTING
         !iv_name  TYPE string
         !iv_value TYPE string .
+
+    METHODS get_header_field
+      IMPORTING
+                iv_name            TYPE string
+      RETURNING VALUE(rv_hd_value) TYPE string.
 
     METHODS execute
       IMPORTING
@@ -197,10 +202,10 @@ CLASS zcl_http_con IMPLEMENTATION.
         " disable the pop-up for authentication
         lo_http_client->propertytype_logon_popup = lo_http_client->co_disabled.
 
-
         IF me->mv_method_type IS INITIAL.
-          MESSAGE e001(00) WITH 'Method Type is initial' INTO zcx_rest_exception=>mv_msg_text.
-          zcx_rest_exception=>s_raise( ).
+          me->mv_method_type = zif_http_method_type=>gc_get_method.
+*          MESSAGE e001(00) WITH 'Method Type is initial' INTO zcx_rest_exception=>mv_msg_text.
+*          zcx_rest_exception=>s_raise( ).
         ENDIF.
 
         " set method type
@@ -316,6 +321,7 @@ CLASS zcl_http_con IMPLEMENTATION.
     IF me->mv_method_type IS INITIAL.
       me->mv_method_type = iv_method_type.
     ENDIF.
+
   ENDMETHOD.
 
 
@@ -389,7 +395,25 @@ CLASS zcl_http_con IMPLEMENTATION.
     ls_header-name = iv_name.
     ls_header-value = iv_value.
 
-    APPEND ls_header TO me->mt_header.
+    DATA(lv_header_value) = me->get_header_field( iv_name = iv_name ).
+
+    IF lv_header_value IS NOT INITIAL.
+      MODIFY TABLE me->mt_header FROM ls_header.
+    ELSE.
+      APPEND ls_header TO me->mt_header.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD get_header_field.
+    " Define the header fields
+    DATA: ls_header TYPE ihttpnvp.
+
+    READ TABLE me->mt_header INTO ls_header WITH KEY name = iv_name.
+
+    IF sy-subrc = 0.
+      rv_hd_value = ls_header-value.
+    ENDIF.
+
   ENDMETHOD.
 
 
