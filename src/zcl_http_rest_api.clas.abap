@@ -170,7 +170,7 @@ CLASS zcl_http_rest_api IMPLEMENTATION.
     " return the Response with the information
     rs_http_data-status = lo_http_response->get_header_field( name = '~status_code' ).
     rs_http_data-response = lo_http_response->get_cdata(  ).
-    rs_http_data-request = lo_http_response->get_cdata( ).
+    rs_http_data-request = lo_http_req->get_cdata( ).
     rs_http_data-file_ = lo_http_response->get_data( ).
 
     me->mo_http_con->set_free( ).

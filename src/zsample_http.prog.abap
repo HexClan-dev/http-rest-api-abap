@@ -16,7 +16,7 @@ START-OF-SELECTION.
 
       lo_simple_f->basic_authentication(
           iv_username   = 'nailspahija'
-          iv_password   = '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'
+          iv_password   = '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'
       ).
 
 *      lo_simple_f->set_body( iv_method_type  = 'GET' ).
