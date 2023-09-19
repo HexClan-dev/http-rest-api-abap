@@ -19,7 +19,12 @@ START-OF-SELECTION.
           iv_password   = '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'
       ).
 
-*      lo_simple_f->set_body( iv_method_type  = 'GET' ).
+*      lo_simple_f->set_body(
+*        EXPORTING
+**          iv_body         = ''
+*          iv_content_type = zif_http_content_type=>gc_json_content_type
+*          iv_method_type  = zif_http_method_type=>gc_get_method
+*      ).
 
       lo_simple_f->set_method_type( iv_method_type = zif_http_method_type=>gc_get_method ).
 
